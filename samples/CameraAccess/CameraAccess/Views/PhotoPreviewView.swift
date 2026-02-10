@@ -21,7 +21,9 @@ struct PhotoPreviewView: View {
   let onDismiss: () -> Void
 
   @State private var showShareSheet = false
+  @State private var showAnalysis = false
   @State private var dragOffset = CGSize.zero
+  @StateObject private var analysisViewModel = AnalysisViewModel()
 
   var body: some View {
     ZStack {
@@ -34,23 +36,55 @@ struct PhotoPreviewView: View {
 
       VStack(spacing: 20) {
         photoDisplayView
+        
+        // Action buttons
+        HStack(spacing: 20) {
+          Button(action: {
+            showAnalysis = true
+          }) {
+            VStack {
+              Image(systemName: "sparkles")
+                .font(.title2)
+              Text("Analyze")
+                .font(.caption)
+            }
+            .foregroundColor(.white)
+            .padding()
+            .background(Color.blue.opacity(0.8))
+            .cornerRadius(12)
+          }
+          
+          Button(action: {
+            showShareSheet = true
+          }) {
+            VStack {
+              Image(systemName: "square.and.arrow.up")
+                .font(.title2)
+              Text("Share")
+                .font(.caption)
+            }
+            .foregroundColor(.white)
+            .padding()
+            .background(Color.green.opacity(0.8))
+            .cornerRadius(12)
+          }
+        }
       }
       .padding()
       .offset(dragOffset)
       .animation(.spring(response: 0.6, dampingFraction: 0.8), value: dragOffset)
     }
-    .task {
-      try? await Task.sleep(nanoseconds: 100_000_000)
-      showShareSheet = true
-    }
-    .sheet(
-      isPresented: $showShareSheet,
-      onDismiss: {
-        // When share sheet is dismissed, dismiss the entire preview
-        dismissWithAnimation()
-      }
-    ) {
+    .sheet(isPresented: $showShareSheet) {
       ShareSheet(photo: photo)
+    }
+    .fullScreenCover(isPresented: $showAnalysis) {
+      AnalysisOverlay(
+        viewModel: analysisViewModel,
+        image: photo,
+        onClose: {
+          showAnalysis = false
+        }
+      )
     }
   }
 
